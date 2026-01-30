@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>%VITE_APP_TITLE%</title>
+    <link rel="stylesheet" href="/src/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="ProxySite" />
+    <link rel="manifest" href="/favicon/site.webmanifest" />
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <h1>Proxy Requester <span style="font-size: 0.5em; opacity: 0.5; vertical-align: middle;">v3.0 (New Port)</span></h1>
+            <div class="auth-controls">
+                <button id="themeToggle" class="theme-toggle" title="Toggle Dark/Light Mode">
+                    🌙
+                </button>
+                <input type="password" id="proxyPassword" placeholder="Proxy Password" required>
+                <div id="connection-status" class="status-indicator" title="Checking connection..."></div>
+            </div>
+        </header>
+
+        <div class="browser-window">
+            <div class="browser-toolbar">
+                <div class="traffic-lights">
+                    <div class="traffic-light red"></div>
+                    <div class="traffic-light yellow"></div>
+                    <div class="traffic-light green"></div>
+                </div>
+                
+                <div class="nav-controls">
+                    <button id="refreshBtn" title="Refresh">↻</button>
+                </div>
+
+                <div class="url-bar-container">
+                    <input type="text" id="urlInput" class="url-input" placeholder="Enter URL (e.g., website.com)">
+                </div>
+
+                <button id="goBtn" class="go-button">Go</button>
+            </div>
+            
+            <div class="browser-content">
+                <div id="loadingOverlay" class="loading-overlay hidden">
+                    <div class="spinner"></div>
+                    <span id="loadingText">Loading...</span>
+                </div>
+                <iframe id="browser-frame" src="about:blank" sandbox="allow-forms allow-scripts allow-same-origin allow-popups"></iframe>
+            </div>
+        </div>
+        
+        <div id="status-message"></div>
+    </div>
+
+    <script type="module" src="/src/app.js?v=3.0"></script>
+</body>
+</html>
