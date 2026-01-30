@@ -26,14 +26,20 @@ const format = winston.format.combine(
     // Check if message is a JSON string (from Morgan)
     let message = info.message;
     if (info.level === 'http') {
-      try {
-        const httpLog = JSON.parse(message);
-        // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-        return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
-      } catch (e) {
-        // Fallback if parsing fails
-        return `${info.timestamp} ${info.level}: ${message}`;
+      let httpLog;
+      if (typeof message === 'object' && message !== null) {
+        httpLog = message;
+      } else {
+        try {
+          httpLog = JSON.parse(message);
+        } catch (e) {
+          // Fallback if parsing fails
+          return `${info.timestamp} ${info.level}: ${message}`;
+        }
       }
+
+      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
+      return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
     }
     return `${info.timestamp} ${info.level}: ${message}`;
   }),
