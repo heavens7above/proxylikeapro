@@ -7,6 +7,29 @@ const ping = (req, res) => {
 
 const config = require('../core/config');
 
+// Optimization: Create proxy middleware once and reuse it to avoid overhead per request.
+// Dynamic targeting is handled by the `router` function.
+const proxyMiddleware = createProxyMiddleware({
+  target: 'http://0.0.0.0', // Default, required but overridden by router
+  router: (req) => req.query.target,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/proxy': '',
+  },
+  onProxyRes: (proxyRes) => {
+    // Allow embedding by stripping security headers
+    delete proxyRes.headers['x-frame-options'];
+    delete proxyRes.headers['content-security-policy'];
+    delete proxyRes.headers['response-content-security-policy'];
+
+    proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+  },
+  onError: (err, req, res) => {
+    logger.error('Proxy Error:', err);
+    res.status(500).send('Proxy Error');
+  },
+});
+
 const handleProxy = (req, res, next) => {
   const targetUrl = req.query.target;
 
@@ -17,31 +40,13 @@ const handleProxy = (req, res, next) => {
   // Recursion Prevention
   const normalize = (url) => url.replace(/\/$/, '');
   const frontendUrl = req.headers['x-frontend-url'] || req.query.frontend_url;
-  
+
   if (frontendUrl && normalize(targetUrl) === normalize(frontendUrl)) {
-      logger.warn('Recursion detected. Resetting client.');
-      return res.status(205).send('Recursion Detected');
+    logger.warn('Recursion detected. Resetting client.');
+    return res.status(205).send('Recursion Detected');
   }
 
-  createProxyMiddleware({
-    target: targetUrl,
-    changeOrigin: true,
-    pathRewrite: {
-      '^/proxy': '',
-    },
-    onProxyRes: (proxyRes) => {
-      // Allow embedding by stripping security headers
-      delete proxyRes.headers['x-frame-options'];
-      delete proxyRes.headers['content-security-policy'];
-      delete proxyRes.headers['response-content-security-policy'];
-      
-      proxyRes.headers['Access-Control-Allow-Origin'] = '*';
-    },
-    onError: (err, req, res) => {
-      logger.error('Proxy Error:', err);
-      res.status(500).send('Proxy Error');
-    },
-  })(req, res, next);
+  return proxyMiddleware(req, res, next);
 };
 
 module.exports = {
