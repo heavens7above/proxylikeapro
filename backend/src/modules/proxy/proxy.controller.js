@@ -7,6 +7,29 @@ const ping = (req, res) => {
 
 const config = require('../core/config');
 
+// Pre-create the proxy middleware instance to avoid re-instantiation on every request.
+// This significantly improves performance and prevents potential memory leaks.
+const proxyMiddleware = createProxyMiddleware({
+  target: 'http://0.0.0.0', // Default target (required, but overridden by router)
+  router: (req) => req.query.target, // Dynamically determine target from query param
+  changeOrigin: true,
+  pathRewrite: {
+    '^/proxy': '',
+  },
+  onProxyRes: (proxyRes) => {
+    // Allow embedding by stripping security headers
+    delete proxyRes.headers['x-frame-options'];
+    delete proxyRes.headers['content-security-policy'];
+    delete proxyRes.headers['response-content-security-policy'];
+
+    proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+  },
+  onError: (err, req, res) => {
+    logger.error('Proxy Error:', err);
+    res.status(500).send('Proxy Error');
+  },
+});
+
 const handleProxy = (req, res, next) => {
   const targetUrl = req.query.target;
 
@@ -23,25 +46,8 @@ const handleProxy = (req, res, next) => {
       return res.status(205).send('Recursion Detected');
   }
 
-  createProxyMiddleware({
-    target: targetUrl,
-    changeOrigin: true,
-    pathRewrite: {
-      '^/proxy': '',
-    },
-    onProxyRes: (proxyRes) => {
-      // Allow embedding by stripping security headers
-      delete proxyRes.headers['x-frame-options'];
-      delete proxyRes.headers['content-security-policy'];
-      delete proxyRes.headers['response-content-security-policy'];
-      
-      proxyRes.headers['Access-Control-Allow-Origin'] = '*';
-    },
-    onError: (err, req, res) => {
-      logger.error('Proxy Error:', err);
-      res.status(500).send('Proxy Error');
-    },
-  })(req, res, next);
+  // Use the pre-created middleware instance
+  return proxyMiddleware(req, res, next);
 };
 
 module.exports = {
