@@ -7,6 +7,31 @@ const ping = (req, res) => {
 
 const config = require('../core/config');
 
+// Initialize proxy middleware once to avoid memory leaks and improve performance
+const proxyMiddleware = createProxyMiddleware({
+  target: 'http://0.0.0.0', // Default target, overridden by router
+  changeOrigin: true,
+  router: (req) => {
+    // Dynamically resolve target from query parameter
+    return req.query.target;
+  },
+  pathRewrite: {
+    '^/proxy': '',
+  },
+  onProxyRes: (proxyRes) => {
+    // Allow embedding by stripping security headers
+    delete proxyRes.headers['x-frame-options'];
+    delete proxyRes.headers['content-security-policy'];
+    delete proxyRes.headers['response-content-security-policy'];
+
+    proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+  },
+  onError: (err, req, res) => {
+    logger.error('Proxy Error:', err);
+    res.status(500).send('Proxy Error');
+  },
+});
+
 const handleProxy = (req, res, next) => {
   const targetUrl = req.query.target;
 
@@ -23,25 +48,7 @@ const handleProxy = (req, res, next) => {
       return res.status(205).send('Recursion Detected');
   }
 
-  createProxyMiddleware({
-    target: targetUrl,
-    changeOrigin: true,
-    pathRewrite: {
-      '^/proxy': '',
-    },
-    onProxyRes: (proxyRes) => {
-      // Allow embedding by stripping security headers
-      delete proxyRes.headers['x-frame-options'];
-      delete proxyRes.headers['content-security-policy'];
-      delete proxyRes.headers['response-content-security-policy'];
-      
-      proxyRes.headers['Access-Control-Allow-Origin'] = '*';
-    },
-    onError: (err, req, res) => {
-      logger.error('Proxy Error:', err);
-      res.status(500).send('Proxy Error');
-    },
-  })(req, res, next);
+  return proxyMiddleware(req, res, next);
 };
 
 module.exports = {
