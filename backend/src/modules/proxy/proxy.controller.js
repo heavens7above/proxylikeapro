@@ -1,11 +1,37 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const logger = require('../core/logger');
+const config = require('../core/config');
 
 const ping = (req, res) => {
   res.status(200).send('pong');
 };
 
-const config = require('../core/config');
+// Create the proxy middleware once to avoid overhead on every request
+const proxyMiddleware = createProxyMiddleware({
+  target: 'http://0.0.0.0', // Default target, overridden by router
+  changeOrigin: true,
+  pathRewrite: {
+    '^/proxy': '',
+  },
+  router: (req) => {
+    return req.query.target;
+  },
+  onProxyRes: (proxyRes) => {
+    // Allow embedding by stripping security headers
+    delete proxyRes.headers['x-frame-options'];
+    delete proxyRes.headers['content-security-policy'];
+    delete proxyRes.headers['response-content-security-policy'];
+
+    proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+  },
+  onError: (err, req, res) => {
+    logger.error('Proxy Error:', err);
+    // Ensure we don't try to send headers if already sent
+    if (!res.headersSent) {
+      res.status(500).send('Proxy Error');
+    }
+  },
+});
 
 const handleProxy = (req, res, next) => {
   const targetUrl = req.query.target;
@@ -23,25 +49,8 @@ const handleProxy = (req, res, next) => {
       return res.status(205).send('Recursion Detected');
   }
 
-  createProxyMiddleware({
-    target: targetUrl,
-    changeOrigin: true,
-    pathRewrite: {
-      '^/proxy': '',
-    },
-    onProxyRes: (proxyRes) => {
-      // Allow embedding by stripping security headers
-      delete proxyRes.headers['x-frame-options'];
-      delete proxyRes.headers['content-security-policy'];
-      delete proxyRes.headers['response-content-security-policy'];
-      
-      proxyRes.headers['Access-Control-Allow-Origin'] = '*';
-    },
-    onError: (err, req, res) => {
-      logger.error('Proxy Error:', err);
-      res.status(500).send('Proxy Error');
-    },
-  })(req, res, next);
+  // Delegate to the shared proxy middleware
+  return proxyMiddleware(req, res, next);
 };
 
 module.exports = {
