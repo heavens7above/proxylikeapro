@@ -1,3 +1,6 @@
+## 2026-02-03 - [Proxy Middleware Instantiation]
+**Learning:** `http-proxy-middleware` is expensive to instantiate. Doing so per-request (to handle dynamic targets) is a major bottleneck.
+**Action:** Always instantiate `createProxyMiddleware` once. Use the `router` option (function) to handle dynamic targets based on request parameters.
 ## 2024-05-22 - [Middleware Instantiation Overhead]
 **Learning:** Instantiating `http-proxy-middleware` inside the request handler adds significant overhead (parsing options, internal setup) per request.
 **Action:** Always instantiate middleware at the module level. Use the `router` option for dynamic targets.
