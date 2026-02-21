@@ -9,6 +9,7 @@ const config = require('../core/config');
 
 // Initialize proxy middleware once
 const proxyMiddleware = createProxyMiddleware({
+  target: 'http://0.0.0.0', // Default target (invalid), overridden by router
   target: 'http://localhost', // Default target, overridden by router
 // Initialize middleware once to avoid overhead per request
 // Using the 'router' option allows dynamic targets
