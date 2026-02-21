@@ -10,12 +10,17 @@ const config = require('../core/config');
 // Initialize proxy middleware once
 const proxyMiddleware = createProxyMiddleware({
   target: 'http://localhost', // Default target, overridden by router
+// Initialize middleware once to avoid overhead per request
+// Using the 'router' option allows dynamic targets
+const proxyMiddleware = createProxyMiddleware({
+  target: 'http://localhost', // Fallback target, will be overridden by router
   changeOrigin: true,
   pathRewrite: {
     '^/proxy': '',
   },
   router: (req) => {
     return req.query.target;
+      return req.query.target;
   },
   onProxyRes: (proxyRes) => {
     // Allow embedding by stripping security headers
@@ -48,6 +53,7 @@ const handleProxy = (req, res, next) => {
   }
 
   return proxyMiddleware(req, res, next);
+  proxyMiddleware(req, res, next);
 };
 
 module.exports = {
