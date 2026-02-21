@@ -1,3 +1,6 @@
+## 2026-02-04 - [Middleware Instantiation Leak]
+**Learning:** Instantiating `http-proxy-middleware` (and likely other complex middlewares) inside the request handler (`app.use((req, res) => createMiddleware(...)(req, res))`) causes significant performance overhead and MEMORY LEAKS due to event listeners (e.g., `server.close`) being attached on every request but never removed.
+**Action:** Always instantiate middleware ONCE at the module level. Use dynamic configuration options (like `router` function in `http-proxy-middleware`) to handle per-request logic instead of recreating the middleware instance.
 ## 2026-02-03 - [Proxy Middleware Instantiation]
 **Learning:** `http-proxy-middleware` is expensive to instantiate. Doing so per-request (to handle dynamic targets) is a major bottleneck.
 **Action:** Always instantiate `createProxyMiddleware` once. Use the `router` option (function) to handle dynamic targets based on request parameters.
