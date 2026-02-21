@@ -7,6 +7,9 @@ const ping = (req, res) => {
 
 const config = require('../core/config');
 
+// Initialize proxy middleware once
+const proxyMiddleware = createProxyMiddleware({
+  target: 'http://localhost', // Default target, overridden by router
 // Initialize middleware once to avoid overhead per request
 // Using the 'router' option allows dynamic targets
 const proxyMiddleware = createProxyMiddleware({
@@ -16,6 +19,7 @@ const proxyMiddleware = createProxyMiddleware({
     '^/proxy': '',
   },
   router: (req) => {
+    return req.query.target;
       return req.query.target;
   },
   onProxyRes: (proxyRes) => {
@@ -48,6 +52,7 @@ const handleProxy = (req, res, next) => {
       return res.status(205).send('Recursion Detected');
   }
 
+  return proxyMiddleware(req, res, next);
   proxyMiddleware(req, res, next);
 };
 
