@@ -9,6 +9,10 @@ const ping = (req, res) => {
 
 const config = require('../core/config');
 
+// Initialize proxy middleware once
+const proxyMiddleware = createProxyMiddleware({
+  target: 'http://0.0.0.0', // Default target, overridden by router
+  router: (req) => req.query.target,
 // HTTP Agent
 const httpAgent = new http.Agent({
   keepAlive: true,
@@ -82,6 +86,7 @@ const handleProxy = (req, res, next) => {
       return res.status(205).send('Recursion Detected');
   }
 
+  return proxyMiddleware(req, res, next);
   // Dispatch based on protocol
   if (targetUrl.startsWith('https:')) {
     proxyMiddlewareHttps(req, res, next);
