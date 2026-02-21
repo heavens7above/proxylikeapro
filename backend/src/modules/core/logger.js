@@ -26,6 +26,10 @@ const format = winston.format.combine(
     // Check if message is a JSON string (from Morgan) or an object
     let message = info.message;
     if (info.level === 'http') {
+      let httpLog;
+      if (typeof message === 'object' && message !== null) {
+        httpLog = message;
+      } else {
       let httpLog = message;
       // If message is a string, try to parse it (backward compatibility)
       if (typeof message === 'string') {
@@ -35,6 +39,10 @@ const format = winston.format.combine(
           // Fallback if parsing fails
           return `${info.timestamp} ${info.level}: ${message}`;
         }
+      }
+
+      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
+      return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
       }
 
       if (httpLog && typeof httpLog === 'object') {
