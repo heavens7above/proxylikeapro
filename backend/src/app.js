@@ -20,10 +20,10 @@ app.use(cors({
 }));
 
 // Logging Middleware
-// Logging Middleware
-// Custom format: JSON object for structured logging
+// Custom format: Pass object directly to logger (avoiding JSON serialization)
 app.use(morgan((tokens, req, res) => {
     const logObject = {
+    const httpLog = {
         method: tokens.method(req, res),
         url: tokens.url(req, res),
         status: Number.parseFloat(tokens.status(req, res)),
@@ -33,6 +33,7 @@ app.use(morgan((tokens, req, res) => {
         user_agent: tokens['user-agent'](req, res),
     };
     logger.http({ message: logObject });
+    logger.http(httpLog);
     return null;
 }));
 
