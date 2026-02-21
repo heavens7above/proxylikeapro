@@ -41,8 +41,11 @@ const format = winston.format.combine(
         // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
         return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
       }
+    if (info.level === 'http') {
+      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
+      return `${info.timestamp} [HTTP] [${info.status}] ${info.method} ${info.url} (${info.response_time} ms) - IP: ${info.remote_addr}`;
     }
-    return `${info.timestamp} ${info.level}: ${message}`;
+    return `${info.timestamp} ${info.level}: ${info.message}`;
   }),
 );
 
