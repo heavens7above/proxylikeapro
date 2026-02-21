@@ -7,6 +7,31 @@ const ping = (req, res) => {
 
 const config = require('../core/config');
 
+// Initialize middleware once to avoid overhead per request
+// Using the 'router' option allows dynamic targets
+const proxyMiddleware = createProxyMiddleware({
+  target: 'http://localhost', // Fallback target, will be overridden by router
+  changeOrigin: true,
+  pathRewrite: {
+    '^/proxy': '',
+  },
+  router: (req) => {
+      return req.query.target;
+  },
+  onProxyRes: (proxyRes) => {
+    // Allow embedding by stripping security headers
+    delete proxyRes.headers['x-frame-options'];
+    delete proxyRes.headers['content-security-policy'];
+    delete proxyRes.headers['response-content-security-policy'];
+
+    proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+  },
+  onError: (err, req, res) => {
+    logger.error('Proxy Error:', err);
+    res.status(500).send('Proxy Error');
+  },
+});
+
 const handleProxy = (req, res, next) => {
   const targetUrl = req.query.target;
 
@@ -23,25 +48,7 @@ const handleProxy = (req, res, next) => {
       return res.status(205).send('Recursion Detected');
   }
 
-  createProxyMiddleware({
-    target: targetUrl,
-    changeOrigin: true,
-    pathRewrite: {
-      '^/proxy': '',
-    },
-    onProxyRes: (proxyRes) => {
-      // Allow embedding by stripping security headers
-      delete proxyRes.headers['x-frame-options'];
-      delete proxyRes.headers['content-security-policy'];
-      delete proxyRes.headers['response-content-security-policy'];
-      
-      proxyRes.headers['Access-Control-Allow-Origin'] = '*';
-    },
-    onError: (err, req, res) => {
-      logger.error('Proxy Error:', err);
-      res.status(500).send('Proxy Error');
-    },
-  })(req, res, next);
+  proxyMiddleware(req, res, next);
 };
 
 module.exports = {
