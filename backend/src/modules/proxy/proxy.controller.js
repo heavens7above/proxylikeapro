@@ -90,6 +90,30 @@ const proxyMiddlewareHttps = createProxyMiddleware({
   agent: httpsAgent,
 });
 
+// Initialize proxy middleware once to improve performance
+const proxyMiddleware = createProxyMiddleware({
+  target: 'http://0.0.0.0', // Default target, overridden by router
+  changeOrigin: true,
+  pathRewrite: {
+    '^/proxy': '',
+  },
+  router: (req) => {
+    return req.query.target;
+  },
+  onProxyRes: (proxyRes) => {
+    // Allow embedding by stripping security headers
+    delete proxyRes.headers['x-frame-options'];
+    delete proxyRes.headers['content-security-policy'];
+    delete proxyRes.headers['response-content-security-policy'];
+
+    proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+  },
+  onError: (err, req, res) => {
+    logger.error('Proxy Error:', err);
+    res.status(500).send('Proxy Error');
+  },
+});
+
 const handleProxy = (req, res, next) => {
   const targetUrl = req.query.target;
 
@@ -106,6 +130,8 @@ const handleProxy = (req, res, next) => {
       return res.status(205).send('Recursion Detected');
   }
 
+  // Use the pre-initialized proxy middleware
+  return proxyMiddleware(req, res, next);
   // Delegate to the shared proxy middleware instance
   return proxyMiddleware(req, res, next);
   return proxyMiddleware(req, res, next);
