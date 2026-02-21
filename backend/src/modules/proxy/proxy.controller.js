@@ -1,4 +1,6 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const http = require('http');
+const https = require('https');
 const logger = require('../core/logger');
 
 const ping = (req, res) => {
@@ -7,6 +9,19 @@ const ping = (req, res) => {
 
 const config = require('../core/config');
 
+// HTTP Agent
+const httpAgent = new http.Agent({
+  keepAlive: true,
+  maxSockets: 100,
+});
+
+// HTTPS Agent
+const httpsAgent = new https.Agent({
+  keepAlive: true,
+  maxSockets: 100,
+});
+
+const commonProxyOptions = {
 // Initialize proxy middleware once
 const proxyMiddleware = createProxyMiddleware({
   target: 'http://0.0.0.0', // Default target (invalid), overridden by router
@@ -35,6 +50,20 @@ const proxyMiddleware = createProxyMiddleware({
     logger.error('Proxy Error:', err);
     res.status(500).send('Proxy Error');
   },
+};
+
+// Middleware for HTTP targets
+const proxyMiddlewareHttp = createProxyMiddleware({
+  ...commonProxyOptions,
+  target: 'http://localhost', // fallback
+  agent: httpAgent,
+});
+
+// Middleware for HTTPS targets
+const proxyMiddlewareHttps = createProxyMiddleware({
+  ...commonProxyOptions,
+  target: 'https://google.com', // fallback
+  agent: httpsAgent,
 });
 
 const handleProxy = (req, res, next) => {
@@ -53,6 +82,12 @@ const handleProxy = (req, res, next) => {
       return res.status(205).send('Recursion Detected');
   }
 
+  // Dispatch based on protocol
+  if (targetUrl.startsWith('https:')) {
+    proxyMiddlewareHttps(req, res, next);
+  } else {
+    proxyMiddlewareHttp(req, res, next);
+  }
   return proxyMiddleware(req, res, next);
   proxyMiddleware(req, res, next);
 };
