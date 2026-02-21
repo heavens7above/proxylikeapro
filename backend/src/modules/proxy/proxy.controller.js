@@ -7,7 +7,27 @@ const ping = (req, res) => {
   res.status(200).send('pong');
 };
 
-const config = require('../core/config');
+// Define proxy middleware once to avoid per-request instantiation
+const proxyMiddleware = createProxyMiddleware({
+  target: 'http://0.0.0.0', // Default target, overridden by router
+  router: (req) => req.query.target,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/proxy': '',
+  },
+  onProxyRes: (proxyRes) => {
+    // Allow embedding by stripping security headers
+    delete proxyRes.headers['x-frame-options'];
+    delete proxyRes.headers['content-security-policy'];
+    delete proxyRes.headers['response-content-security-policy'];
+
+    proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+  },
+  onError: (err, req, res) => {
+    logger.error('Proxy Error:', err);
+    res.status(500).send('Proxy Error');
+  },
+});
 
 // Initialize proxy middleware once
 const proxyMiddleware = createProxyMiddleware({
@@ -86,6 +106,8 @@ const handleProxy = (req, res, next) => {
       return res.status(205).send('Recursion Detected');
   }
 
+  // Delegate to the shared proxy middleware instance
+  return proxyMiddleware(req, res, next);
   return proxyMiddleware(req, res, next);
   // Dispatch based on protocol
   if (targetUrl.startsWith('https:')) {
