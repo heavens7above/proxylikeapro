@@ -23,36 +23,29 @@ winston.addColors(colors);
 const format = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.printf((info) => {
-    // Check if message is a JSON string (from Morgan) or an object
-    let message = info.message;
     if (info.level === 'http') {
-      let httpLog;
-      if (typeof message === 'object' && message !== null) {
-        httpLog = message;
-      } else {
-      let httpLog = message;
+      let httpLog = info.message;
+
       // If message is a string, try to parse it (backward compatibility)
-      if (typeof message === 'string') {
+      if (typeof httpLog === 'string') {
         try {
-          httpLog = JSON.parse(message);
+          httpLog = JSON.parse(httpLog);
         } catch (e) {
-          // Fallback if parsing fails
-          return `${info.timestamp} ${info.level}: ${message}`;
+          // Fallback if parsing fails or it's just a string message
+          return `${info.timestamp} ${info.level}: ${info.message}`;
         }
       }
 
-      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-      return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
+      // If httpLog is an object (either passed directly or parsed)
+      if (typeof httpLog === 'object' && httpLog !== null) {
+         // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
+         return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
+      } else {
+         // Fallback
+         return `${info.timestamp} ${info.level}: ${info.message}`;
       }
-
-      if (httpLog && typeof httpLog === 'object') {
-        // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-        return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
-      }
-    if (info.level === 'http') {
-      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-      return `${info.timestamp} [HTTP] [${info.status}] ${info.method} ${info.url} (${info.response_time} ms) - IP: ${info.remote_addr}`;
     }
+
     return `${info.timestamp} ${info.level}: ${info.message}`;
   }),
 );
