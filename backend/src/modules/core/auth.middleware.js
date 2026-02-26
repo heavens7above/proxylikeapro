@@ -16,14 +16,16 @@ const authLimiter = rateLimit({
   },
 });
 
-const safeCompare = (a, b) => {
-  const bufferA = Buffer.from(a);
-  const bufferB = Buffer.from(b);
+let cachedPassword = config.proxyPassword;
+let cachedPasswordBuffer = cachedPassword ? Buffer.from(cachedPassword) : null;
 
-  if (bufferA.length !== bufferB.length) {
+const safeCompare = (a, targetBuffer) => {
+  const bufferA = Buffer.from(a);
+
+  if (!targetBuffer || bufferA.length !== targetBuffer.length) {
     return false;
   }
-  return crypto.timingSafeEqual(bufferA, bufferB);
+  return crypto.timingSafeEqual(bufferA, targetBuffer);
 };
 
 const authMiddleware = (req, res, next) => {
@@ -39,12 +41,18 @@ const authMiddleware = (req, res, next) => {
         return next();
     }
 
+    // Refresh cache if config changed (e.g. during tests)
+    if (config.proxyPassword !== cachedPassword) {
+        cachedPassword = config.proxyPassword;
+        cachedPasswordBuffer = cachedPassword ? Buffer.from(cachedPassword) : null;
+    }
+
     if (!authHeader) { // Missing header
         logger.warn(`Unauthorized (Missing Header) from ${req.ip}`);
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
-     if (safeCompare(authHeader, config.proxyPassword)) {
+     if (safeCompare(authHeader, cachedPasswordBuffer)) {
         return next();
     }
 
