@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const morgan = require('morgan');
 const logger = require('./modules/core/logger');
 const config = require('./modules/core/config');
@@ -14,6 +15,9 @@ app.use(helmet({
     frameguard: false
 }));
 
+// Compression Middleware
+app.use(compression());
+
 // Strict CORS
 app.use(cors({
   origin: config.corsOrigin,
@@ -22,7 +26,6 @@ app.use(cors({
 // Logging Middleware
 // Custom format: Pass object directly to logger (avoiding JSON serialization)
 app.use(morgan((tokens, req, res) => {
-    const logObject = {
     const httpLog = {
         method: tokens.method(req, res),
         url: tokens.url(req, res),
@@ -32,7 +35,6 @@ app.use(morgan((tokens, req, res) => {
         remote_addr: tokens['remote-addr'](req, res),
         user_agent: tokens['user-agent'](req, res),
     };
-    logger.http({ message: logObject });
     logger.http(httpLog);
     return null;
 }));
