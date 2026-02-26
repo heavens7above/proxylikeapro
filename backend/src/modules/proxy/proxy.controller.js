@@ -185,6 +185,29 @@ const proxyMiddleware = createProxyMiddleware({
   },
 });
 
+const proxyMiddleware = createProxyMiddleware({
+  target: 'http://0.0.0.0', // Default target, overridden by router
+  changeOrigin: true,
+  pathRewrite: {
+    '^/proxy': '',
+  },
+  router: (req) => {
+    return req.query.target;
+  },
+  onProxyRes: (proxyRes) => {
+    // Allow embedding by stripping security headers
+    delete proxyRes.headers['x-frame-options'];
+    delete proxyRes.headers['content-security-policy'];
+    delete proxyRes.headers['response-content-security-policy'];
+
+    proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+  },
+  onError: (err, req, res) => {
+    logger.error('Proxy Error:', err);
+    res.status(500).send('Proxy Error');
+  },
+});
+
 const handleProxy = (req, res, next) => {
   const targetUrl = req.query.target;
 
