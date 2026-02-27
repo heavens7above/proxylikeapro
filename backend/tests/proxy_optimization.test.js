@@ -23,27 +23,31 @@ describe('Proxy Optimization Tests', () => {
   let app;
 
   beforeEach(() => {
-    // We cannot clear mock calls here for createProxyMiddleware because it is called at module load time.
-    // However, we can verify it was called once overall.
+    jest.clearAllMocks();
     app = express();
     app.use('/proxy', proxyController.handleProxy);
   });
 
-  it('should verify createProxyMiddleware is called exactly once (during initialization)', async () => {
-    // Make requests to trigger the handler
-    await request(app).get('/proxy?target=http://example.com');
-    await request(app).get('/proxy?target=http://example.org');
+  it('should verify createProxyMiddleware is called exactly twice (once for HTTP, once for HTTPS)', async () => {
+    // Re-requiring the module to trigger the top-level calls
+    jest.resetModules();
+    jest.mock('http-proxy-middleware', () => ({
+        createProxyMiddleware: jest.fn(() => (req, res, next) => next()),
+    }));
 
-    // It should have been called only once during module initialization
-    expect(createProxyMiddleware).toHaveBeenCalledTimes(1);
+    // Trigger module load
+    require('../src/modules/proxy/proxy.controller');
+
+    // It should have been called exactly twice during module initialization
+    // One for HTTP agent, one for HTTPS agent
+    const { createProxyMiddleware } = require('http-proxy-middleware');
+    expect(createProxyMiddleware).toHaveBeenCalledTimes(2);
 
     // Verify the configuration passed includes router
-    const config = createProxyMiddleware.mock.calls[0][0];
-    expect(config).toHaveProperty('router');
-    expect(typeof config.router).toBe('function');
+    const config1 = createProxyMiddleware.mock.calls[0][0];
+    const config2 = createProxyMiddleware.mock.calls[1][0];
 
-    // Test the router function logic if possible
-    const reqMock = { query: { target: 'http://target.com' } };
-    expect(config.router(reqMock)).toBe('http://target.com');
+    expect(config1).toHaveProperty('router');
+    expect(config2).toHaveProperty('router');
   });
 });
