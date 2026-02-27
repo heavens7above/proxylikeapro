@@ -29,10 +29,7 @@ const format = winston.format.combine(
       let httpLog;
       if (typeof message === 'object' && message !== null) {
         httpLog = message;
-      } else {
-      let httpLog = message;
-      // If message is a string, try to parse it (backward compatibility)
-      if (typeof message === 'string') {
+      } else if (typeof message === 'string') {
         try {
           httpLog = JSON.parse(message);
         } catch (e) {
@@ -41,17 +38,10 @@ const format = winston.format.combine(
         }
       }
 
-      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-      return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
-      }
-
       if (httpLog && typeof httpLog === 'object') {
         // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
         return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
       }
-    if (info.level === 'http') {
-      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-      return `${info.timestamp} [HTTP] [${info.status}] ${info.method} ${info.url} (${info.response_time} ms) - IP: ${info.remote_addr}`;
     }
     return `${info.timestamp} ${info.level}: ${info.message}`;
   }),
