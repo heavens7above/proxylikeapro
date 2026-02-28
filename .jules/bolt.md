@@ -21,3 +21,7 @@
 ## 2026-01-30 - [Reuse Proxy Middleware]
 **Learning:** `http-proxy-middleware` instantiation includes option parsing and regex compilation. Recreating it on every request is a significant performance anti-pattern. The `router` option enables dynamic targeting with a single middleware instance.
 **Action:** Always verify if middleware libraries support dynamic configuration via functions (like `router`) to avoid per-request instantiation.
+
+## 2026-02-28 - [Morgan Logging Optimization]
+**Learning:** Returning `null` from `morgan` format function and passing objects directly to `winston` via `logger.http(httpLog)` avoids expensive `JSON.stringify` and `JSON.parse` overhead for every HTTP request.
+**Action:** Always verify if logging pipelines support direct object injection to avoid serialization bottlenecks.
