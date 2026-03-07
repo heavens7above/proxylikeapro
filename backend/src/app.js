@@ -22,17 +22,17 @@ app.use(cors({
 // Logging Middleware
 // Custom format: Pass object directly to logger (avoiding JSON serialization)
 app.use(morgan((tokens, req, res) => {
-    const logObject = {
     const httpLog = {
         method: tokens.method(req, res),
         url: tokens.url(req, res),
-        status: Number.parseFloat(tokens.status(req, res)),
+        // Opt: unary plus is faster than Number.parseFloat
+        status: +tokens.status(req, res),
         content_length: tokens.res(req, res, 'content-length'),
-        response_time: Number.parseFloat(tokens['response-time'](req, res)),
+        // Opt: unary plus is faster than Number.parseFloat
+        response_time: +tokens['response-time'](req, res),
         remote_addr: tokens['remote-addr'](req, res),
         user_agent: tokens['user-agent'](req, res),
     };
-    logger.http({ message: logObject });
     logger.http(httpLog);
     return null;
 }));
