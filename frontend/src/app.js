@@ -153,7 +153,13 @@ async function navigate(url) {
 // Initial Load
 urlInput.value = DEFAULT_TARGET_URL;
 checkBackend();
-setInterval(checkBackend, POLLING_INTERVAL); // Heartbeat
+
+// Heartbeat - Only poll when the tab is visible to save resources
+setInterval(() => {
+    if (document.visibilityState === 'visible') {
+        checkBackend();
+    }
+}, POLLING_INTERVAL);
 
 // Inputs
 urlInput.addEventListener('keydown', (e) => {
