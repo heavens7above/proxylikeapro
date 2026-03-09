@@ -29,21 +29,21 @@ describe('Proxy Optimization Tests', () => {
     app.use('/proxy', proxyController.handleProxy);
   });
 
-  it('should verify createProxyMiddleware is called exactly once (during initialization)', async () => {
+  it('should verify createProxyMiddleware is called exactly twice (during initialization)', async () => {
     // Make requests to trigger the handler
     await request(app).get('/proxy?target=http://example.com');
     await request(app).get('/proxy?target=http://example.org');
 
-    // It should have been called only once during module initialization
-    expect(createProxyMiddleware).toHaveBeenCalledTimes(1);
+    // It should have been called twice during module initialization (once for HTTP, once for HTTPS)
+    expect(createProxyMiddleware).toHaveBeenCalledTimes(2);
 
     // Verify the configuration passed includes router
-    const config = createProxyMiddleware.mock.calls[0][0];
-    expect(config).toHaveProperty('router');
-    expect(typeof config.router).toBe('function');
+    const configHttp = createProxyMiddleware.mock.calls[0][0];
+    expect(configHttp).toHaveProperty('router');
+    expect(typeof configHttp.router).toBe('function');
 
     // Test the router function logic if possible
     const reqMock = { query: { target: 'http://target.com' } };
-    expect(config.router(reqMock)).toBe('http://target.com');
+    expect(configHttp.router(reqMock)).toBe('http://target.com');
   });
 });
