@@ -21,3 +21,7 @@
 ## 2026-01-30 - [Reuse Proxy Middleware]
 **Learning:** `http-proxy-middleware` instantiation includes option parsing and regex compilation. Recreating it on every request is a significant performance anti-pattern. The `router` option enables dynamic targeting with a single middleware instance.
 **Action:** Always verify if middleware libraries support dynamic configuration via functions (like `router`) to avoid per-request instantiation.
+
+## 2026-03-12 - [Global Agents with Single Proxy Instance]
+**Learning:** When using a single `http-proxy-middleware` instance with a `router` function to handle both HTTP and HTTPS targets dynamically, passing specific custom `agent` options (like `http.Agent` or `https.Agent`) to `createProxyMiddleware` doesn't work well because the agent is bound at initialization.
+**Action:** Configure `http.globalAgent` and `https.globalAgent` properties (e.g. `keepAlive: true`, `maxSockets: 100`) to maintain connection pooling optimization across both protocols when using a single dynamic proxy instance.
