@@ -29,21 +29,33 @@ describe('Proxy Optimization Tests', () => {
     app.use('/proxy', proxyController.handleProxy);
   });
 
-  it('should verify createProxyMiddleware is called exactly once (during initialization)', async () => {
+  it('should verify createProxyMiddleware is called only for global initializations (not per request)', async () => {
+    // Note: Our optimized approach creates two middleware instances globally
+    // (one for http and one for https, each using their own pooled connection agent).
+    // Let's clear mock calls first to count correctly since instantiation happened at module load.
+
     // Make requests to trigger the handler
     await request(app).get('/proxy?target=http://example.com');
     await request(app).get('/proxy?target=http://example.org');
+    await request(app).get('/proxy?target=https://example.com');
 
-    // It should have been called only once during module initialization
-    expect(createProxyMiddleware).toHaveBeenCalledTimes(1);
+    // It should NOT have been called again on the requests
+    // Because it is called 2 times in proxy.controller.js globally (once for HTTP, once for HTTPS),
+    // and we did not reload the module, the count is exactly 2.
+    expect(createProxyMiddleware).toHaveBeenCalledTimes(2);
 
     // Verify the configuration passed includes router
-    const config = createProxyMiddleware.mock.calls[0][0];
-    expect(config).toHaveProperty('router');
-    expect(typeof config.router).toBe('function');
+    const configHttp = createProxyMiddleware.mock.calls[0][0];
+    const configHttps = createProxyMiddleware.mock.calls[1][0];
+
+    expect(configHttp).toHaveProperty('router');
+    expect(typeof configHttp.router).toBe('function');
+
+    expect(configHttps).toHaveProperty('router');
+    expect(typeof configHttps.router).toBe('function');
 
     // Test the router function logic if possible
     const reqMock = { query: { target: 'http://target.com' } };
-    expect(config.router(reqMock)).toBe('http://target.com');
+    expect(configHttp.router(reqMock)).toBe('http://target.com');
   });
 });
