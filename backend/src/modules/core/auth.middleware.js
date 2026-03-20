@@ -19,8 +19,19 @@ const authLimiter = rateLimit({
 let cachedPassword = config.proxyPassword;
 let cachedPasswordBuffer = cachedPassword ? Buffer.from(cachedPassword) : null;
 
+// Cache for incoming password to avoid Buffer allocation overhead per request
+let lastSeenPassword = null;
+let lastSeenPasswordBuffer = null;
+
 const safeCompare = (a, targetBuffer) => {
-  const bufferA = Buffer.from(a);
+  let bufferA;
+  if (a === lastSeenPassword && lastSeenPasswordBuffer !== null) {
+    bufferA = lastSeenPasswordBuffer;
+  } else {
+    bufferA = Buffer.from(a);
+    lastSeenPassword = a;
+    lastSeenPasswordBuffer = bufferA;
+  }
 
   if (!targetBuffer || bufferA.length !== targetBuffer.length) {
     return false;
