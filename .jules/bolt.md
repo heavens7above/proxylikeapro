@@ -1,3 +1,7 @@
+## 2026-03-20 - [Auth Middleware Buffer Allocation]
+**Learning:** In `auth.middleware.js`, allocating a new `Buffer.from(authHeader)` on every incoming request creates significant unnecessary GC pressure, as incoming headers are often identical across multiple sequential requests from the same client.
+**Action:** Cache the incoming `authHeader` string and its corresponding `Buffer`. Before allocating a new `Buffer`, check if the string matches the cached string. If so, reuse the cached `Buffer` to improve performance and reduce GC overhead.
+
 ## 2026-02-05 - http-proxy-middleware Instantiation
 **Learning:** Instantiating `http-proxy-middleware` inside request handlers is a major performance anti-pattern found in this codebase. It creates new internal HTTP agents and event listeners for every request, leading to memory leaks and high latency.
 **Action:** Always refactor to a single middleware instance using the `router` option for dynamic targets.
