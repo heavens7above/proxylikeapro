@@ -19,8 +19,22 @@ const authLimiter = rateLimit({
 let cachedPassword = config.proxyPassword;
 let cachedPasswordBuffer = cachedPassword ? Buffer.from(cachedPassword) : null;
 
+// Cache the last seen auth header to avoid recreating Buffers for every request
+// from the same client, saving significant overhead (creates GC pressure otherwise).
+let cachedAuthHeader = null;
+let cachedAuthHeaderBuffer = null;
+
 const safeCompare = (a, targetBuffer) => {
-  const bufferA = Buffer.from(a);
+  let bufferA;
+
+  // Optimization: Only create a new Buffer if the string changed
+  if (a === cachedAuthHeader) {
+    bufferA = cachedAuthHeaderBuffer;
+  } else {
+    bufferA = Buffer.from(a);
+    cachedAuthHeader = a;
+    cachedAuthHeaderBuffer = bufferA;
+  }
 
   if (!targetBuffer || bufferA.length !== targetBuffer.length) {
     return false;
