@@ -1,3 +1,7 @@
+## 2026-03-28 - Winston Object Logging
+**Learning:** Passing an object nested under `message: logObject` to `winston.log()` forces Winston to serialize and parse the string to extract fields in custom formats. Passing the object directly (e.g., `logger.http(httpLog)`) allows Winston to natively merge properties into `info`, avoiding `JSON.parse` overhead per request in high-throughput pipelines.
+**Action:** Always pass plain objects directly to Winston methods (`logger.http(obj)`) instead of nesting them in strings or `message` properties, and adjust formatter functions to read from `info` directly.
+
 ## 2026-02-05 - http-proxy-middleware Instantiation
 **Learning:** Instantiating `http-proxy-middleware` inside request handlers is a major performance anti-pattern found in this codebase. It creates new internal HTTP agents and event listeners for every request, leading to memory leaks and high latency.
 **Action:** Always refactor to a single middleware instance using the `router` option for dynamic targets.
