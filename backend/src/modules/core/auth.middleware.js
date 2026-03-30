@@ -19,8 +19,23 @@ const authLimiter = rateLimit({
 let cachedPassword = config.proxyPassword;
 let cachedPasswordBuffer = cachedPassword ? Buffer.from(cachedPassword) : null;
 
+// Cache the most recently seen incoming password and its Buffer
+// This avoids repeatedly allocating new Buffers for the same static token
+// in high-throughput environments, significantly reducing GC overhead.
+let lastIncomingPassword = null;
+let lastIncomingPasswordBuffer = null;
+
 const safeCompare = (a, targetBuffer) => {
-  const bufferA = Buffer.from(a);
+  let bufferA;
+
+  // Check if we can reuse the cached incoming buffer
+  if (a === lastIncomingPassword && lastIncomingPasswordBuffer !== null) {
+    bufferA = lastIncomingPasswordBuffer;
+  } else {
+    bufferA = Buffer.from(a);
+    lastIncomingPassword = a;
+    lastIncomingPasswordBuffer = bufferA;
+  }
 
   if (!targetBuffer || bufferA.length !== targetBuffer.length) {
     return false;
