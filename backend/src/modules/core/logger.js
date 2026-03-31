@@ -23,15 +23,17 @@ winston.addColors(colors);
 const format = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.printf((info) => {
-    // Check if message is a JSON string (from Morgan) or an object
-    let message = info.message;
+    // When passing object directly to logger.http, Winston extracts properties into info
     if (info.level === 'http') {
-      let httpLog;
-      if (typeof message === 'object' && message !== null) {
-        httpLog = message;
-      } else {
+      // If properties exist directly on info, use them
+      if (info.status !== undefined && info.method !== undefined && info.url !== undefined) {
+        return `${info.timestamp} [HTTP] [${info.status}] ${info.method} ${info.url} (${info.response_time} ms) - IP: ${info.remote_addr}`;
+      }
+
+      // Fallback for strings or nested objects (backward compatibility)
+      let message = info.message;
       let httpLog = message;
-      // If message is a string, try to parse it (backward compatibility)
+
       if (typeof message === 'string') {
         try {
           httpLog = JSON.parse(message);
@@ -41,17 +43,9 @@ const format = winston.format.combine(
         }
       }
 
-      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-      return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
-      }
-
       if (httpLog && typeof httpLog === 'object') {
-        // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
         return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
       }
-    if (info.level === 'http') {
-      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-      return `${info.timestamp} [HTTP] [${info.status}] ${info.method} ${info.url} (${info.response_time} ms) - IP: ${info.remote_addr}`;
     }
     return `${info.timestamp} ${info.level}: ${info.message}`;
   }),
