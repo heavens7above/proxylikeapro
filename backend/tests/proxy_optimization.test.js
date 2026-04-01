@@ -35,7 +35,8 @@ describe('Proxy Optimization Tests', () => {
     await request(app).get('/proxy?target=http://example.org');
 
     // It should have been called only once during module initialization
-    expect(createProxyMiddleware).toHaveBeenCalledTimes(1);
+    // We instantiate two middleware instances (HTTP and HTTPS)
+    expect(createProxyMiddleware).toHaveBeenCalledTimes(2);
 
     // Verify the configuration passed includes router
     const config = createProxyMiddleware.mock.calls[0][0];
