@@ -21,3 +21,7 @@
 ## 2026-01-30 - [Reuse Proxy Middleware]
 **Learning:** `http-proxy-middleware` instantiation includes option parsing and regex compilation. Recreating it on every request is a significant performance anti-pattern. The `router` option enables dynamic targeting with a single middleware instance.
 **Action:** Always verify if middleware libraries support dynamic configuration via functions (like `router`) to avoid per-request instantiation.
+
+## 2026-04-03 - String to Buffer Conversion GC Pressure
+**Learning:** In Node.js high-throughput environments, repeatedly converting static strings (like auth tokens) to Buffers for timing-safe comparisons causes significant GC overhead. Caching the string input and its resulting Buffer object avoids redundant allocations and yields major execution time improvements.
+**Action:** Cache the string to Buffer conversion for values that remain the same across requests (e.g. repeated identical auth headers) before calling `crypto.timingSafeEqual`.
