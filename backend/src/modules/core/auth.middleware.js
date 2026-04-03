@@ -19,10 +19,27 @@ const authLimiter = rateLimit({
 let cachedPassword = config.proxyPassword;
 let cachedPasswordBuffer = cachedPassword ? Buffer.from(cachedPassword) : null;
 
-const safeCompare = (a, targetBuffer) => {
-  const bufferA = Buffer.from(a);
+// Cache the most recently seen incoming password and its Buffer
+let lastIncomingAuth = null;
+let lastIncomingAuthBuffer = null;
 
-  if (!targetBuffer || bufferA.length !== targetBuffer.length) {
+const safeCompare = (a, targetBuffer) => {
+  if (!targetBuffer) {
+    return false;
+  }
+
+  let bufferA;
+  if (a === lastIncomingAuth) {
+    // Reuse the cached buffer for the incoming string
+    bufferA = lastIncomingAuthBuffer;
+  } else {
+    // Allocate new buffer and cache it
+    bufferA = Buffer.from(a);
+    lastIncomingAuth = a;
+    lastIncomingAuthBuffer = bufferA;
+  }
+
+  if (bufferA.length !== targetBuffer.length) {
     return false;
   }
   return crypto.timingSafeEqual(bufferA, targetBuffer);
