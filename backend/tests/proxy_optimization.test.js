@@ -24,18 +24,18 @@ describe('Proxy Optimization Tests', () => {
 
   beforeEach(() => {
     // We cannot clear mock calls here for createProxyMiddleware because it is called at module load time.
-    // However, we can verify it was called once overall.
+    // However, we can verify it was called twice overall (one for HTTP, one for HTTPS).
     app = express();
     app.use('/proxy', proxyController.handleProxy);
   });
 
-  it('should verify createProxyMiddleware is called exactly once (during initialization)', async () => {
+  it('should verify createProxyMiddleware is called exactly twice (during initialization)', async () => {
     // Make requests to trigger the handler
     await request(app).get('/proxy?target=http://example.com');
     await request(app).get('/proxy?target=http://example.org');
 
-    // It should have been called only once during module initialization
-    expect(createProxyMiddleware).toHaveBeenCalledTimes(1);
+    // It should have been called exactly twice during module initialization
+    expect(createProxyMiddleware).toHaveBeenCalledTimes(2);
 
     // Verify the configuration passed includes router
     const config = createProxyMiddleware.mock.calls[0][0];
