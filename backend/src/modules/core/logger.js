@@ -23,14 +23,19 @@ winston.addColors(colors);
 const format = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.printf((info) => {
-    // Check if message is a JSON string (from Morgan) or an object
-    let message = info.message;
+    // Fast path: When an object is passed directly to logger.http(httpLog),
+    // Winston merges its properties directly into the 'info' object.
+    // So if info.status, info.method, etc. exist, use them directly!
+    // This entirely avoids info.message parsing for structured logs.
     if (info.level === 'http') {
-      let httpLog;
-      if (typeof message === 'object' && message !== null) {
-        httpLog = message;
-      } else {
+      if (info.status !== undefined && info.method !== undefined) {
+        return `${info.timestamp} [HTTP] [${info.status}] ${info.method} ${info.url} (${info.response_time} ms) - IP: ${info.remote_addr}`;
+      }
+
+      // Check if message is a JSON string (from Morgan) or an object
+      let message = info.message;
       let httpLog = message;
+
       // If message is a string, try to parse it (backward compatibility)
       if (typeof message === 'string') {
         try {
@@ -41,20 +46,13 @@ const format = winston.format.combine(
         }
       }
 
-      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-      return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
-      }
-
       if (httpLog && typeof httpLog === 'object') {
         // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-        return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
+        return `${info.timestamp} [HTTP] [${httpLog.status || ''}] ${httpLog.method || ''} ${httpLog.url || ''} (${httpLog.response_time || ''} ms) - IP: ${httpLog.remote_addr || ''}`;
       }
-    if (info.level === 'http') {
-      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-      return `${info.timestamp} [HTTP] [${info.status}] ${info.method} ${info.url} (${info.response_time} ms) - IP: ${info.remote_addr}`;
     }
     return `${info.timestamp} ${info.level}: ${info.message}`;
-  }),
+  })
 );
 
 const transports = [
