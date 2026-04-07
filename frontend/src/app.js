@@ -153,7 +153,13 @@ async function navigate(url) {
 // Initial Load
 urlInput.value = DEFAULT_TARGET_URL;
 checkBackend();
-setInterval(checkBackend, POLLING_INTERVAL); // Heartbeat
+
+// Optimize background polling by respecting document visibility
+setInterval(() => {
+    if (document.visibilityState === 'visible') {
+        checkBackend();
+    }
+}, POLLING_INTERVAL); // Heartbeat
 
 // Inputs
 urlInput.addEventListener('keydown', (e) => {
@@ -211,4 +217,3 @@ passwordInput.addEventListener('input', (e) => {
 // Initialize features on load
 initTheme();
 initPassword();
-
