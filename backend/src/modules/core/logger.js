@@ -23,35 +23,30 @@ winston.addColors(colors);
 const format = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.printf((info) => {
-    // Check if message is a JSON string (from Morgan) or an object
     let message = info.message;
     if (info.level === 'http') {
-      let httpLog;
-      if (typeof message === 'object' && message !== null) {
-        httpLog = message;
-      } else {
-      let httpLog = message;
-      // If message is a string, try to parse it (backward compatibility)
+      let httpLog = undefined;
+
+      // Handle the case where message is a string that might be JSON
       if (typeof message === 'string') {
         try {
           httpLog = JSON.parse(message);
         } catch (e) {
-          // Fallback if parsing fails
-          return `${info.timestamp} ${info.level}: ${message}`;
+          // Not JSON, just normal string log
         }
+      } else if (typeof message === 'object' && message !== null) {
+        httpLog = message;
       }
 
-      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-      return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
+      // If we got an object from Winston merging the log object
+      if (!httpLog && info.method && info.url && info.status !== undefined) {
+         httpLog = info;
       }
 
-      if (httpLog && typeof httpLog === 'object') {
+      if (httpLog && typeof httpLog === 'object' && httpLog.method && httpLog.url) {
         // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
         return `${info.timestamp} [HTTP] [${httpLog.status}] ${httpLog.method} ${httpLog.url} (${httpLog.response_time} ms) - IP: ${httpLog.remote_addr}`;
       }
-    if (info.level === 'http') {
-      // Rich Text Format: [Timestamp] [HTTP] [Status] Method URL (Duration ms) - IP
-      return `${info.timestamp} [HTTP] [${info.status}] ${info.method} ${info.url} (${info.response_time} ms) - IP: ${info.remote_addr}`;
     }
     return `${info.timestamp} ${info.level}: ${info.message}`;
   }),
