@@ -21,3 +21,6 @@
 ## 2026-01-30 - [Reuse Proxy Middleware]
 **Learning:** `http-proxy-middleware` instantiation includes option parsing and regex compilation. Recreating it on every request is a significant performance anti-pattern. The `router` option enables dynamic targeting with a single middleware instance.
 **Action:** Always verify if middleware libraries support dynamic configuration via functions (like `router`) to avoid per-request instantiation.
+## 2026-04-10 - [Dynamic Agent Assignment in Proxy Middleware]
+**Learning:** Dynamic agent assignment for `http-proxy-middleware` must be done by returning the `agent` explicitly inside the `router` function's returned configuration object. Modifying `proxyReq.agent` inside `onProxyReq` has no effect because socket allocation using the default agent has already started by that lifecycle phase, leading to fallback on the Node.js global agent and causing connection pooling to break.
+**Action:** When combining proxy middlewares, use a single `createProxyMiddleware` module-level instance and assign agents inside the `router` function returning a configuration object `{ target, agent }`.

@@ -44,6 +44,13 @@ describe('Proxy Optimization Tests', () => {
 
     // Test the router function logic if possible
     const reqMock = { query: { target: 'http://target.com' } };
-    expect(config.router(reqMock)).toBe('http://target.com');
+    const routeResult = config.router(reqMock);
+    // Modified to support an object being returned
+    if (typeof routeResult === 'object') {
+       expect(routeResult.target).toBe('http://target.com');
+       expect(routeResult).toHaveProperty('agent');
+    } else {
+       expect(routeResult).toBe('http://target.com');
+    }
   });
 });
