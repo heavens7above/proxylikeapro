@@ -21,3 +21,6 @@
 ## 2026-01-30 - [Reuse Proxy Middleware]
 **Learning:** `http-proxy-middleware` instantiation includes option parsing and regex compilation. Recreating it on every request is a significant performance anti-pattern. The `router` option enables dynamic targeting with a single middleware instance.
 **Action:** Always verify if middleware libraries support dynamic configuration via functions (like `router`) to avoid per-request instantiation.
+## 2026-04-24 - [Auth String Caching Anti-Pattern]
+**Learning:** Caching user-provided credentials globally at the module level (even to avoid `Buffer.from()` overhead) is a severe anti-pattern. It creates a security leak (retaining sensitive plaintext in memory) and introduces a DoS vector if an attacker sends an exceptionally large payload that gets cached indefinitely.
+**Action:** Do not implement request-scoped or user-provided payload caching in global scope for micro-optimizations. Focus on systemic, measurable algorithmic bottlenecks instead of single-function memory allocations.
