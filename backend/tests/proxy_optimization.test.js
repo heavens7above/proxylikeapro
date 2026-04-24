@@ -16,26 +16,31 @@ jest.mock('http-proxy-middleware', () => {
 });
 
 const { createProxyMiddleware } = require('http-proxy-middleware');
-// Controller must be required AFTER mocking
-const proxyController = require('../src/modules/proxy/proxy.controller');
 
 describe('Proxy Optimization Tests', () => {
   let app;
+  let proxyController;
 
   beforeEach(() => {
-    // We cannot clear mock calls here for createProxyMiddleware because it is called at module load time.
-    // However, we can verify it was called once overall.
-    app = express();
-    app.use('/proxy', proxyController.handleProxy);
+    jest.isolateModules(() => {
+      proxyController = require('../src/modules/proxy/proxy.controller');
+      app = express();
+      app.use('/proxy', proxyController.handleProxy);
+    });
   });
 
-  it('should verify createProxyMiddleware is called exactly once (during initialization)', async () => {
+  afterEach(() => {
+    jest.resetModules();
+    jest.clearAllMocks();
+  });
+
+  it('should verify createProxyMiddleware is called exactly twice (once for http, once for https) during initialization', async () => {
     // Make requests to trigger the handler
     await request(app).get('/proxy?target=http://example.com');
-    await request(app).get('/proxy?target=http://example.org');
+    await request(app).get('/proxy?target=https://example.org');
 
-    // It should have been called only once during module initialization
-    expect(createProxyMiddleware).toHaveBeenCalledTimes(1);
+    // It should have been called twice during module initialization (for the Http and Https agents)
+    expect(createProxyMiddleware).toHaveBeenCalledTimes(2);
 
     // Verify the configuration passed includes router
     const config = createProxyMiddleware.mock.calls[0][0];
