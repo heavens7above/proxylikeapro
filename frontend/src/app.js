@@ -153,7 +153,29 @@ async function navigate(url) {
 // Initial Load
 urlInput.value = DEFAULT_TARGET_URL;
 checkBackend();
-setInterval(checkBackend, POLLING_INTERVAL); // Heartbeat
+
+// OPTIMIZATION: Suspend background polling when tab is inactive to save resources
+let pollInterval;
+const startPolling = () => {
+    if (!pollInterval) pollInterval = setInterval(checkBackend, POLLING_INTERVAL);
+};
+const stopPolling = () => {
+    if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+    }
+};
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        checkBackend();
+        startPolling();
+    } else {
+        stopPolling();
+    }
+});
+
+startPolling();
 
 // Inputs
 urlInput.addEventListener('keydown', (e) => {
@@ -211,4 +233,3 @@ passwordInput.addEventListener('input', (e) => {
 // Initialize features on load
 initTheme();
 initPassword();
-

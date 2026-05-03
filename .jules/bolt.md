@@ -21,3 +21,7 @@
 ## 2026-01-30 - [Reuse Proxy Middleware]
 **Learning:** `http-proxy-middleware` instantiation includes option parsing and regex compilation. Recreating it on every request is a significant performance anti-pattern. The `router` option enables dynamic targeting with a single middleware instance.
 **Action:** Always verify if middleware libraries support dynamic configuration via functions (like `router`) to avoid per-request instantiation.
+
+## 2024-05-23 - [Frontend Polling Optimization]
+**Learning:** Polling the backend continuously (`setInterval`) causes network requests and resource usage even when the application tab is hidden or minimized.
+**Action:** Use `document.visibilityState` to suspend background activity when the application is hidden, saving both client CPU/network and server resources.
