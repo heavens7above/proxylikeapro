@@ -153,7 +153,14 @@ async function navigate(url) {
 // Initial Load
 urlInput.value = DEFAULT_TARGET_URL;
 checkBackend();
-setInterval(checkBackend, POLLING_INTERVAL); // Heartbeat
+
+// Optimization: Respect visibility state to suspend network polling when tab is hidden,
+// reducing unnecessary background network requests and server load.
+setInterval(() => {
+    if (document.visibilityState === 'visible') {
+        checkBackend();
+    }
+}, POLLING_INTERVAL); // Heartbeat
 
 // Inputs
 urlInput.addEventListener('keydown', (e) => {
@@ -211,4 +218,3 @@ passwordInput.addEventListener('input', (e) => {
 // Initialize features on load
 initTheme();
 initPassword();
-
