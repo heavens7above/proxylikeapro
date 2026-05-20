@@ -20,9 +20,8 @@ app.use(cors({
 }));
 
 // Logging Middleware
-// Custom format: Pass object directly to logger (avoiding JSON serialization)
+// Optimization: Pass structured object directly to logger to bypass JSON.stringify/parse overhead
 app.use(morgan((tokens, req, res) => {
-    const logObject = {
     const httpLog = {
         method: tokens.method(req, res),
         url: tokens.url(req, res),
@@ -32,7 +31,6 @@ app.use(morgan((tokens, req, res) => {
         remote_addr: tokens['remote-addr'](req, res),
         user_agent: tokens['user-agent'](req, res),
     };
-    logger.http({ message: logObject });
     logger.http(httpLog);
     return null;
 }));
