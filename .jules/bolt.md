@@ -21,3 +21,6 @@
 ## 2026-01-30 - [Reuse Proxy Middleware]
 **Learning:** `http-proxy-middleware` instantiation includes option parsing and regex compilation. Recreating it on every request is a significant performance anti-pattern. The `router` option enables dynamic targeting with a single middleware instance.
 **Action:** Always verify if middleware libraries support dynamic configuration via functions (like `router`) to avoid per-request instantiation.
+## 2026-05-31 - Winston Logging Overhead
+**Learning:** In backend `logger.js`, passing structured JSON strings from morgan to winston via `logger.http({ message: logObject })` and then parsing them back out incurs significant `JSON.parse` overhead (~391ms vs ~240ms for 100k iterations). Winston merges object properties into the top-level `info` object when passed directly like `logger.http(httpLog)`.
+**Action:** Always pass structured log objects directly to Winston (e.g., `logger.http(httpLog)`) instead of stringifying or wrapping them in `{ message: ... }`. Update formatters to read properties directly from the `info` object.
