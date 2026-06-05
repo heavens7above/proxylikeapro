@@ -5,7 +5,6 @@ const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 5000;
 const MAX_RETRIES = Number(import.meta.env.VITE_MAX_RETRIES) || 10;
 const DEFAULT_TARGET_URL = import.meta.env.VITE_DEFAULT_TARGET_URL || 'https://example.com';
 
-
 // Elements
 console.log('%c ProxySite App v2.1 Loaded ', 'background: #222; color: #bada55; padding: 4px; border-radius: 4px;');
 const urlInput = document.getElementById('urlInput');
@@ -153,7 +152,13 @@ async function navigate(url) {
 // Initial Load
 urlInput.value = DEFAULT_TARGET_URL;
 checkBackend();
-setInterval(checkBackend, POLLING_INTERVAL); // Heartbeat
+
+// Performance Optimization: Only poll when the tab is visible to save resources
+setInterval(() => {
+    if (document.visibilityState === 'visible') {
+        checkBackend();
+    }
+}, POLLING_INTERVAL); // Heartbeat
 
 // Inputs
 urlInput.addEventListener('keydown', (e) => {
@@ -211,4 +216,3 @@ passwordInput.addEventListener('input', (e) => {
 // Initialize features on load
 initTheme();
 initPassword();
-

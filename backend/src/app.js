@@ -22,7 +22,8 @@ app.use(cors({
 // Logging Middleware
 // Custom format: Pass object directly to logger (avoiding JSON serialization)
 app.use(morgan((tokens, req, res) => {
-    const logObject = {
+    // ⚡ Bolt: Pass log object directly to Winston instead of wrapping in { message: logObject }
+    // This avoids overhead and allows Winston to merge properties into the top-level info object.
     const httpLog = {
         method: tokens.method(req, res),
         url: tokens.url(req, res),
@@ -32,7 +33,6 @@ app.use(morgan((tokens, req, res) => {
         remote_addr: tokens['remote-addr'](req, res),
         user_agent: tokens['user-agent'](req, res),
     };
-    logger.http({ message: logObject });
     logger.http(httpLog);
     return null;
 }));
