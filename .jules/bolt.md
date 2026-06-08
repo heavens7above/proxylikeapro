@@ -21,3 +21,6 @@
 ## 2026-01-30 - [Reuse Proxy Middleware]
 **Learning:** `http-proxy-middleware` instantiation includes option parsing and regex compilation. Recreating it on every request is a significant performance anti-pattern. The `router` option enables dynamic targeting with a single middleware instance.
 **Action:** Always verify if middleware libraries support dynamic configuration via functions (like `router`) to avoid per-request instantiation.
+## 2026-06-08 - [Optimize morgan logging overhead]
+**Learning:** We observed a performance degradation or syntax error issue caused by creating local variables in the morgan middleware for logging HTTP requests. Winston's logger correctly merges raw object parameters at the top level instead of wrapping them in a `message` property. A stringified JSON parser wrapper for the log properties is unnecessary if Winston reads `info` property correctly. We can extract direct property references and skip the temporary local object allocation.
+**Action:** Always verify if Winston's `format.printf` is configured to properly pick up unstructured properties directly instead of building custom wrapping local objects when injecting into `logger.http`.
