@@ -21,3 +21,6 @@
 ## 2026-01-30 - [Reuse Proxy Middleware]
 **Learning:** `http-proxy-middleware` instantiation includes option parsing and regex compilation. Recreating it on every request is a significant performance anti-pattern. The `router` option enables dynamic targeting with a single middleware instance.
 **Action:** Always verify if middleware libraries support dynamic configuration via functions (like `router`) to avoid per-request instantiation.
+## 2024-06-11 - [Winston Logger Formatter Optimization]
+**Learning:** In the `backend/src/app.js` and `backend/src/modules/core/logger.js`, the morgan middleware was extracting request properties into an object (`httpLog`), passing it as `{ message: httpLog }` to Winston, and then having Winston's formatter stringify and re-parse it in earlier iterations. By passing the `httpLog` object directly to `logger.http(httpLog)` and formatting it directly without stringification/parsing, performance improved significantly (RPS increased from ~634 to ~741 in benchmarks).
+**Action:** When passing structured log data from morgan to winston, avoid intermediate stringification (`JSON.stringify` or embedding in string templates). Pass the raw object to Winston and handle it directly in the formatter.
