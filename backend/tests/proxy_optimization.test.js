@@ -16,34 +16,38 @@ jest.mock('http-proxy-middleware', () => {
 });
 
 const { createProxyMiddleware } = require('http-proxy-middleware');
-// Controller must be required AFTER mocking
-const proxyController = require('../src/modules/proxy/proxy.controller');
 
 describe('Proxy Optimization Tests', () => {
   let app;
+  let proxyController;
+
+  beforeAll(() => {
+     // Isolate modules so that the required module uses our mock
+     jest.isolateModules(() => {
+        proxyController = require('../src/modules/proxy/proxy.controller');
+     });
+  });
 
   beforeEach(() => {
-    // We cannot clear mock calls here for createProxyMiddleware because it is called at module load time.
-    // However, we can verify it was called once overall.
     app = express();
     app.use('/proxy', proxyController.handleProxy);
   });
 
-  it('should verify createProxyMiddleware is called exactly once (during initialization)', async () => {
+  it('should verify createProxyMiddleware is called exactly twice (during initialization, for http and https agents)', async () => {
     // Make requests to trigger the handler
     await request(app).get('/proxy?target=http://example.com');
-    await request(app).get('/proxy?target=http://example.org');
+    await request(app).get('/proxy?target=https://example.org');
 
-    // It should have been called only once during module initialization
-    expect(createProxyMiddleware).toHaveBeenCalledTimes(1);
+    // It should have been called exactly twice during module initialization
+    expect(createProxyMiddleware).toHaveBeenCalledTimes(2);
 
     // Verify the configuration passed includes router
-    const config = createProxyMiddleware.mock.calls[0][0];
-    expect(config).toHaveProperty('router');
-    expect(typeof config.router).toBe('function');
+    const configHttp = createProxyMiddleware.mock.calls[0][0];
+    expect(configHttp).toHaveProperty('router');
+    expect(typeof configHttp.router).toBe('function');
 
-    // Test the router function logic if possible
+    // Test the router function logic
     const reqMock = { query: { target: 'http://target.com' } };
-    expect(config.router(reqMock)).toBe('http://target.com');
+    expect(configHttp.router(reqMock)).toBe('http://target.com');
   });
 });
