@@ -21,3 +21,7 @@
 ## 2026-01-30 - [Reuse Proxy Middleware]
 **Learning:** `http-proxy-middleware` instantiation includes option parsing and regex compilation. Recreating it on every request is a significant performance anti-pattern. The `router` option enables dynamic targeting with a single middleware instance.
 **Action:** Always verify if middleware libraries support dynamic configuration via functions (like `router`) to avoid per-request instantiation.
+
+## 2024-07-13 - [Optimize Proxy Controller URL Normalization]
+**Learning:** Re-allocating utility functions (like `normalize`) and regular expression objects inside high-throughput request handlers like `handleProxy` adds unnecessary overhead per request. Furthermore, using a regex (`url.replace(/\/$/, '')`) just to check and remove a trailing slash is significantly slower than using native string operations (`url.endsWith('/') ? url.slice(0, -1) : url`).
+**Action:** Always extract static utility functions to the module level scope. Replace simple regex-based string manipulations with equivalent native string methods when performance is a priority.
