@@ -19,6 +19,9 @@ const authLimiter = rateLimit({
 let cachedPassword = config.proxyPassword;
 let cachedPasswordBuffer = cachedPassword ? Buffer.from(cachedPassword) : null;
 
+// Optimization: module-level flag to avoid redundant I/O logging on every request
+let warnedNoPassword = false;
+
 const safeCompare = (a, targetBuffer) => {
   const bufferA = Buffer.from(a);
 
@@ -37,7 +40,10 @@ const authMiddleware = (req, res, next) => {
     const authHeader = req.headers['x-proxy-password'] || req.query.password;
 
     if (!config.proxyPassword) {
-        logger.warn('No proxy password set! allowing access.');
+        if (!warnedNoPassword) {
+            logger.warn('No proxy password set! allowing access.');
+            warnedNoPassword = true;
+        }
         return next();
     }
 
