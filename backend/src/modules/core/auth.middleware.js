@@ -28,6 +28,8 @@ const safeCompare = (a, targetBuffer) => {
   return crypto.timingSafeEqual(bufferA, targetBuffer);
 };
 
+let hasWarnedMissingPassword = false;
+
 const authMiddleware = (req, res, next) => {
     // Allow OPTIONS requests
     if (req.method === 'OPTIONS') {
@@ -37,7 +39,11 @@ const authMiddleware = (req, res, next) => {
     const authHeader = req.headers['x-proxy-password'] || req.query.password;
 
     if (!config.proxyPassword) {
-        logger.warn('No proxy password set! allowing access.');
+        // Optimization: Ensure warning is only logged once to avoid console I/O bottlenecks
+        if (!hasWarnedMissingPassword) {
+            logger.warn('No proxy password set! allowing access.');
+            hasWarnedMissingPassword = true;
+        }
         return next();
     }
 
