@@ -18,6 +18,7 @@ const authLimiter = rateLimit({
 
 let cachedPassword = config.proxyPassword;
 let cachedPasswordBuffer = cachedPassword ? Buffer.from(cachedPassword) : null;
+let hasLoggedNoPasswordWarning = false;
 
 const safeCompare = (a, targetBuffer) => {
   const bufferA = Buffer.from(a);
@@ -34,18 +35,23 @@ const authMiddleware = (req, res, next) => {
         return next();
     }
 
-    const authHeader = req.headers['x-proxy-password'] || req.query.password;
-
-    if (!config.proxyPassword) {
-        logger.warn('No proxy password set! allowing access.');
-        return next();
-    }
-
     // Refresh cache if config changed (e.g. during tests)
     if (config.proxyPassword !== cachedPassword) {
         cachedPassword = config.proxyPassword;
         cachedPasswordBuffer = cachedPassword ? Buffer.from(cachedPassword) : null;
+        hasLoggedNoPasswordWarning = false; // Reset warning flag on config change
     }
+
+    if (!config.proxyPassword) {
+        if (!hasLoggedNoPasswordWarning) {
+            logger.warn('No proxy password set! allowing access.');
+            hasLoggedNoPasswordWarning = true;
+        }
+        return next();
+    }
+
+    // Optimization: Defer accessing headers and queries until we know password check is active
+    const authHeader = req.headers['x-proxy-password'] || req.query.password;
 
     if (!authHeader) { // Missing header
         logger.warn(`Unauthorized (Missing Header) from ${req.ip}`);
