@@ -18,6 +18,8 @@ const authLimiter = rateLimit({
 
 let cachedPassword = config.proxyPassword;
 let cachedPasswordBuffer = cachedPassword ? Buffer.from(cachedPassword) : null;
+// Performance optimization: Module-level flag to ensure missing password warning is logged only once
+let hasLoggedMissingPassword = false;
 
 const safeCompare = (a, targetBuffer) => {
   const bufferA = Buffer.from(a);
@@ -34,12 +36,17 @@ const authMiddleware = (req, res, next) => {
         return next();
     }
 
-    const authHeader = req.headers['x-proxy-password'] || req.query.password;
-
     if (!config.proxyPassword) {
-        logger.warn('No proxy password set! allowing access.');
+        // Log static configuration warnings only once to avoid significant console/file I/O bottlenecks
+        if (!hasLoggedMissingPassword) {
+            logger.warn('No proxy password set! allowing access.');
+            hasLoggedMissingPassword = true;
+        }
         return next();
     }
+
+    // Performance Optimization: Defer extracting request data until after early-exit config check
+    const authHeader = req.headers['x-proxy-password'] || req.query.password;
 
     // Refresh cache if config changed (e.g. during tests)
     if (config.proxyPassword !== cachedPassword) {
