@@ -153,7 +153,13 @@ async function navigate(url) {
 // Initial Load
 urlInput.value = DEFAULT_TARGET_URL;
 checkBackend();
-setInterval(checkBackend, POLLING_INTERVAL); // Heartbeat
+// Optimization: Only poll the backend when the browser tab is visible
+// to save battery, CPU, and network resources.
+setInterval(() => {
+    if (document.visibilityState === 'visible') {
+        checkBackend();
+    }
+}, POLLING_INTERVAL);
 
 // Inputs
 urlInput.addEventListener('keydown', (e) => {
