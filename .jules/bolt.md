@@ -25,3 +25,6 @@
 ## 2024-07-13 - [Optimize Proxy Controller URL Normalization]
 **Learning:** Re-allocating utility functions (like `normalize`) and regular expression objects inside high-throughput request handlers like `handleProxy` adds unnecessary overhead per request. Furthermore, using a regex (`url.replace(/\/$/, '')`) just to check and remove a trailing slash is significantly slower than using native string operations (`url.endsWith('/') ? url.slice(0, -1) : url`).
 **Action:** Always extract static utility functions to the module level scope. Replace simple regex-based string manipulations with equivalent native string methods when performance is a priority.
+## 2026-08-15 - [Visibility-Aware Polling Optimization]
+**Learning:** The frontend app unconditionally used `setInterval` to poll the backend (`checkBackend`) every `POLLING_INTERVAL`. In browser environments, background tabs will blindly execute this loop, continuing to consume CPU, battery life, and network bandwidth for a UI that isn't even visible.
+**Action:** When implementing polling in frontend applications, always wrap the executing logic inside the interval with a check for `document.visibilityState === 'visible'` to suspend unnecessary activity while the tab is hidden.
