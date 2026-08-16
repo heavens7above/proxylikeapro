@@ -25,3 +25,6 @@
 ## 2024-07-13 - [Optimize Proxy Controller URL Normalization]
 **Learning:** Re-allocating utility functions (like `normalize`) and regular expression objects inside high-throughput request handlers like `handleProxy` adds unnecessary overhead per request. Furthermore, using a regex (`url.replace(/\/$/, '')`) just to check and remove a trailing slash is significantly slower than using native string operations (`url.endsWith('/') ? url.slice(0, -1) : url`).
 **Action:** Always extract static utility functions to the module level scope. Replace simple regex-based string manipulations with equivalent native string methods when performance is a priority.
+## 2026-08-16 - Middleware Log Spam Optimization
+**Learning:** Logging static configuration warnings (e.g., missing proxy password) on every request in high-throughput middleware creates significant console/file I/O bottlenecks.
+**Action:** Use a module-level flag to ensure such warnings are logged only once, significantly improving RPS by removing excessive I/O per request.
