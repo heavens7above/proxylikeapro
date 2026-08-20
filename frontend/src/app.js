@@ -5,6 +5,8 @@ const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 5000;
 const MAX_RETRIES = Number(import.meta.env.VITE_MAX_RETRIES) || 10;
 const DEFAULT_TARGET_URL = import.meta.env.VITE_DEFAULT_TARGET_URL || 'https://example.com';
 
+// Pre-compiled regex to prevent regex recompilation overhead on every normalizeUrl invocation
+const HTTP_PROTOCOL_REGEX = /^https?:\/\//i;
 
 // Elements
 console.log('%c ProxySite App v2.1 Loaded ', 'background: #222; color: #bada55; padding: 4px; border-radius: 4px;');
@@ -46,7 +48,8 @@ function showLoading(show, message = 'Loading...') {
 function normalizeUrl(url) {
     if (!url) return '';
     url = url.trim();
-    if (!/^https?:\/\//i.test(url)) {
+    // Use pre-compiled module-level regex to avoid regex re-creation overhead per function call
+    if (!HTTP_PROTOCOL_REGEX.test(url)) {
         return 'https://' + url;
     }
     return url;
@@ -211,4 +214,3 @@ passwordInput.addEventListener('input', (e) => {
 // Initialize features on load
 initTheme();
 initPassword();
-
